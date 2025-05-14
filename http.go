@@ -21,6 +21,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"net/url"
 	"strings"
@@ -151,6 +152,8 @@ func (p *HTTPPool) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	groupName := parts[0]
 	key := parts[1]
 
+	log.Printf("[节点 %s] ServeHTTP 接收到请求 %s", p.self, r.URL.Path)
+
 	// 获取此组/键的值。
 	group := GetGroup(groupName)
 	if group == nil {
@@ -166,6 +169,7 @@ func (p *HTTPPool) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	group.Stats.ServerRequests.Add(1)
 	var value []byte
+	log.Printf("[节点 %s] ServeHTTP 调用 Group %s 的 Get 方法，键: %s", p.self, groupName, key)
 	err := group.Get(ctx, key, AllocatingByteSliceSink(&value))
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -180,6 +184,7 @@ func (p *HTTPPool) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Header().Set("Content-Type", "application/x-protobuf")
 	w.Write(body)
+	log.Printf("[节点 %s] ServeHTTP 序列化并发送响应 (protobuf) 给 %s", p.self, r.RemoteAddr)
 }
 
 type httpGetter struct {
@@ -198,6 +203,7 @@ func (h *httpGetter) Get(ctx context.Context, in *pb.GetRequest, out *pb.GetResp
 		url.QueryEscape(in.GetGroup()),
 		url.QueryEscape(in.GetKey()),
 	)
+	log.Printf("httpGetter 发送 GET 请求到 %s", u)
 	req, err := http.NewRequest("GET", u, nil)
 	if err != nil {
 		return err
@@ -209,9 +215,11 @@ func (h *httpGetter) Get(ctx context.Context, in *pb.GetRequest, out *pb.GetResp
 	}
 	res, err := tr.RoundTrip(req)
 	if err != nil {
+		log.Printf("httpGetter 请求 %s 失败: %v", u, err)
 		return err
 	}
 	defer res.Body.Close()
+	log.Printf("httpGetter 接收到来自 %s 的响应状态: %s", u, res.Status)
 	if res.StatusCode != http.StatusOK {
 		return fmt.Errorf("server returned: %v", res.Status)
 	}
@@ -220,11 +228,14 @@ func (h *httpGetter) Get(ctx context.Context, in *pb.GetRequest, out *pb.GetResp
 	defer bufferPool.Put(b)
 	_, err = io.Copy(b, res.Body)
 	if err != nil {
+		log.Printf("httpGetter 读取 %s 的响应体失败: %v", u, err)
 		return fmt.Errorf("reading response body: %v", err)
 	}
 	err = proto.Unmarshal(b.Bytes(), out)
 	if err != nil {
+		log.Printf("httpGetter 解析来自 %s 的 protobuf 响应失败: %v", u, err)
 		return fmt.Errorf("decoding response body: %v", err)
 	}
+	log.Printf("httpGetter 解析来自 %s 的 protobuf 响应成功", u)
 	return nil
 }

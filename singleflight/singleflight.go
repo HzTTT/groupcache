@@ -17,7 +17,10 @@ limitations under the License.
 // Package singleflight 提供了一个重复函数调用抑制机制。
 package singleflight
 
-import "sync"
+import (
+	"log"
+	"sync"
+)
 
 // call 是一个正在进行中或已完成的 Do 调用
 type call struct {
@@ -44,19 +47,24 @@ func (g *Group) Do(key string, fn func() (interface{}, error)) (interface{}, err
 	}
 	if c, ok := g.m[key]; ok {
 		g.mu.Unlock()
+		log.Printf("Singleflight: 重复请求键 \"%s\", 等待原始请求完成", key)
 		c.wg.Wait()
+		log.Printf("Singleflight: 键 \"%s\" 的原始请求完成, 返回结果", key)
 		return c.val, c.err
 	}
 	c := new(call)
 	c.wg.Add(1)
 	g.m[key] = c
+	log.Printf("Singleflight: 新请求键 \"%s\", 执行函数", key)
 	g.mu.Unlock()
 
 	c.val, c.err = fn()
 	c.wg.Done()
+	log.Printf("Singleflight: 键 \"%s\" 的函数执行完成", key)
 
 	g.mu.Lock()
 	delete(g.m, key)
+	log.Printf("Singleflight: 删除键 \"%s\" 从进行中请求 map", key)
 	g.mu.Unlock()
 
 	return c.val, c.err

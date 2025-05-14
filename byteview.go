@@ -20,6 +20,7 @@ import (
 	"bytes"
 	"errors"
 	"io"
+	"log"
 	"strings"
 )
 
@@ -46,16 +47,20 @@ func (v ByteView) Len() int {
 // ByteSlice 返回数据的副本，作为字节切片。
 func (v ByteView) ByteSlice() []byte {
 	if v.b != nil {
+		log.Printf("ByteView: ByteSlice() called, returning copy of b (len %d)", len(v.b))
 		return cloneBytes(v.b)
 	}
+	log.Printf("ByteView: ByteSlice() called, returning new []byte from s (len %d)", len(v.s))
 	return []byte(v.s)
 }
 
 // String 返回数据作为字符串，如有必要会进行复制。
 func (v ByteView) String() string {
 	if v.b != nil {
+		log.Printf("ByteView: String() called, returning string from b (len %d)", len(v.b))
 		return string(v.b)
 	}
+	log.Printf("ByteView: String() called, returning s (len %d)", len(v.s))
 	return v.s
 }
 

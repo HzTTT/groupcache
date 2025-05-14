@@ -19,6 +19,7 @@ package consistenthash
 
 import (
 	"hash/crc32"
+	"log"
 	"sort"
 	"strconv"
 )
@@ -41,6 +42,7 @@ func New(replicas int, fn Hash) *Map {
 	if m.hash == nil {
 		m.hash = crc32.ChecksumIEEE
 	}
+	log.Printf("ConsistentHash: 创建新的哈希环, 虚拟节点倍数: %d", replicas)
 	return m
 }
 
@@ -51,23 +53,34 @@ func (m *Map) IsEmpty() bool {
 
 // Add 向哈希中添加一些键。
 func (m *Map) Add(keys ...string) {
+	if len(keys) == 0 {
+		return
+	}
+	log.Printf("ConsistentHash: 开始添加节点: %v", keys)
+	addedHashes := 0
 	for _, key := range keys {
 		for i := 0; i < m.replicas; i++ {
 			hash := int(m.hash([]byte(strconv.Itoa(i) + key)))
 			m.keys = append(m.keys, hash)
 			m.hashMap[hash] = key
+			// 避免过多日志，可以考虑只在 DEBUG 级别记录每个哈希，或只记录总数
+			// log.Printf("ConsistentHash: 添加虚拟节点 %s (replica %d), hash %d", key, i, hash)
+			addedHashes++
 		}
 	}
 	sort.Ints(m.keys)
+	log.Printf("ConsistentHash: 添加完成, 共生成 %d 个虚拟节点并排序", addedHashes)
 }
 
 // Get 获取哈希中与提供的键最接近的项。
 func (m *Map) Get(key string) string {
 	if m.IsEmpty() {
+		log.Printf("ConsistentHash: Get(\"%s\") - 哈希环为空", key)
 		return ""
 	}
 
 	hash := int(m.hash([]byte(key)))
+	log.Printf("ConsistentHash: Get(\"%s\") - 计算哈希值: %d", key, hash)
 
 	// 对适当的副本进行二分查找。
 	idx := sort.Search(len(m.keys), func(i int) bool { return m.keys[i] >= hash })
@@ -77,5 +90,7 @@ func (m *Map) Get(key string) string {
 		idx = 0
 	}
 
-	return m.hashMap[m.keys[idx]]
+	node := m.hashMap[m.keys[idx]]
+	log.Printf("ConsistentHash: Get(\"%s\") - 找到节点: %s (通过虚拟节点哈希 %d)", key, node, m.keys[idx])
+	return node
 }

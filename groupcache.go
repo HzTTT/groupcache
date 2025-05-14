@@ -25,6 +25,7 @@ package groupcache
 import (
 	"context"
 	"errors"
+	"log"
 	"math/rand"
 	"strconv"
 	"sync"
@@ -97,6 +98,8 @@ func newGroup(name string, cacheBytes int64, getter Getter, peers PeerPicker) *G
 		peers:      peers,
 		cacheBytes: cacheBytes,
 		loadGroup:  &singleflight.Group{},
+		mainCache:  cache{cacheName: "main"},
+		hotCache:   cache{cacheName: "hot"},
 	}
 	if fn := newGroupHook; fn != nil {
 		fn(g)
@@ -203,6 +206,7 @@ func (g *Group) initPeers() {
 func (g *Group) Get(ctx context.Context, key string, dest Sink) error {
 	g.peersOnce.Do(g.initPeers)
 	g.Stats.Gets.Add(1)
+	log.Printf("[Group %s] 请求键 \"%s\"", g.name, key)
 	if dest == nil {
 		return errors.New("groupcache: nil dest Sink")
 	}
@@ -210,6 +214,7 @@ func (g *Group) Get(ctx context.Context, key string, dest Sink) error {
 
 	if cacheHit {
 		g.Stats.CacheHits.Add(1)
+		log.Printf("[Group %s] 请求处理完成，从缓存返回数据给键 \"%s\"", g.name, key)
 		return setSinkView(dest, value)
 	}
 
@@ -223,15 +228,19 @@ func (g *Group) Get(ctx context.Context, key string, dest Sink) error {
 		return err
 	}
 	if destPopulated {
+		log.Printf("[Group %s] 请求处理完成，通过 dest 返回数据给键 \"%s\"", g.name, key)
 		return nil
 	}
+	log.Printf("[Group %s] 请求处理完成，通过 setSinkView 返回数据给键 \"%s\"", g.name, key)
 	return setSinkView(dest, value)
 }
 
 // load 通过本地调用 getter 或将其发送到另一台机器来加载键。
 func (g *Group) load(ctx context.Context, key string, dest Sink) (value ByteView, destPopulated bool, err error) {
 	g.Stats.Loads.Add(1)
+	log.Printf("[Group %s] load(\"%s\") - 开始加载", g.name, key)
 	viewi, err := g.loadGroup.Do(key, func() (interface{}, error) {
+		log.Printf("[Group %s] loadGroup.Do(\"%s\") - 执行加载函数", g.name, key)
 		// 再次检查缓存，因为 singleflight 只能去重
 		// 并发重叠的调用。两个并发请求可能会错过缓存，
 		// 导致两次 load() 调用。不幸的 goroutine 调度
@@ -253,34 +262,48 @@ func (g *Group) load(ctx context.Context, key string, dest Sink) (value ByteView
 		// 2: fn()
 		if value, cacheHit := g.lookupCache(key); cacheHit {
 			g.Stats.CacheHits.Add(1)
+			// lookupCache 内部已经记录了命中情况
 			return value, nil
 		}
+		log.Printf("[Group %s] lookupCache(\"%s\") - 再次检查，未命中 (在loadGroup.Do内)", g.name, key)
 		g.Stats.LoadsDeduped.Add(1)
 		var value ByteView
 		var err error
 		if peer, ok := g.peers.PickPeer(key); ok {
+			log.Printf("[Group %s] PickPeer(\"%s\") - 责任节点为远程: %s", g.name, key, peer)
 			value, err = g.getFromPeer(ctx, peer, key)
 			if err == nil {
 				g.Stats.PeerLoads.Add(1)
+				log.Printf("[Group %s] getFromPeer(\"%s\") - 成功从远程节点获取", g.name, key)
 				return value, nil
 			}
 			g.Stats.PeerErrors.Add(1)
+			log.Printf("[Group %s] getFromPeer(\"%s\") - 从远程节点获取失败: %v", g.name, key, err)
 			// TODO(bradfitz): 记录对等体的错误？保留
 			// 过去几个的日志供 /groupcachez 使用？这可能
 			// 很无聊（正常任务移动），所以我认为不值得记录。
+		} else {
+			log.Printf("[Group %s] PickPeer(\"%s\") - 责任节点为本地", g.name, key)
 		}
+
+		log.Printf("[Group %s] getLocally(\"%s\") - 调用Getter获取源数据", g.name, key)
 		value, err = g.getLocally(ctx, key, dest)
 		if err != nil {
 			g.Stats.LocalLoadErrs.Add(1)
+			log.Printf("[Group %s] getLocally(\"%s\") - Getter获取源数据失败: %v", g.name, key, err)
 			return nil, err
 		}
 		g.Stats.LocalLoads.Add(1)
 		destPopulated = true // 只有一个 load 的调用者得到这个返回值
+		log.Printf("[Group %s] 数据源返回数据，键 \"%s\", 大小: %d bytes", g.name, key, value.Len())
 		g.populateCache(key, value, &g.mainCache)
 		return value, nil
 	})
 	if err == nil {
 		value = viewi.(ByteView)
+		log.Printf("[Group %s] loadGroup.Do(\"%s\") - 加载完成", g.name, key)
+	} else {
+		log.Printf("[Group %s] loadGroup.Do(\"%s\") - 加载失败: %v", g.name, key, err)
 	}
 	return
 }
@@ -325,9 +348,15 @@ func (g *Group) lookupCache(key string) (value ByteView, ok bool) {
 	}
 	value, ok = g.mainCache.get(key)
 	if ok {
+		log.Printf("[Group %s] lookupCache(\"%s\") - mainCache命中", g.name, key)
 		return
 	}
 	value, ok = g.hotCache.get(key)
+	if ok {
+		log.Printf("[Group %s] lookupCache(\"%s\") - hotCache命中", g.name, key)
+		return
+	}
+	log.Printf("[Group %s] lookupCache(\"%s\") - 未命中", g.name, key)
 	return
 }
 
@@ -336,6 +365,7 @@ func (g *Group) populateCache(key string, value ByteView, cache *cache) {
 		return
 	}
 	cache.add(key, value)
+	log.Printf("[Group %s] populateCache(\"%s\", %d bytes) - 填充 %s 缓存", g.name, key, value.Len(), cache.name())
 
 	// 如有必要，从缓存中淘汰项目。
 	for {
@@ -386,7 +416,15 @@ type cache struct {
 	nbytes     int64 // 所有键和值的总大小
 	lru        *lru.Cache
 	nhit, nget int64
-	nevict     int64 // 淘汰次数
+	nevict     int64  // 淘汰次数
+	cacheName  string // for logging
+}
+
+func (c *cache) name() string {
+	if c.cacheName == "" {
+		return "unknown"
+	}
+	return c.cacheName
 }
 
 func (c *cache) stats() CacheStats {
