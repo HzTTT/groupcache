@@ -69,14 +69,6 @@ func (s *PeerService) announcer() {
 	defer s.wg.Done()
 	//log.Printf("[%s PeerService Announcer] 启动...", s.peerStore.GetSelfGroupcacheAddr())
 
-	// 初始睡眠，以允许其他节点（特别是初始节点）有可能启动。
-	select {
-	case <-time.After(5 * time.Second):
-	case <-s.stopSignal:
-		log.Printf("[%s PeerService Announcer] 正在关闭。", s.peerStore.GetSelfGroupcacheAddr())
-		return
-	}
-
 	ticker := time.NewTicker(s.announceInterval)
 	defer ticker.Stop()
 
@@ -113,7 +105,7 @@ func (s *PeerService) announcer() {
 				}
 			}()
 
-			log.Printf("[%s PeerService Announcer] 周期检查。已知节点（不含自身）: %d。初始节点: %v", s.peerStore.GetSelfGroupcacheAddr(), knownPeerCount, initialPeerApiAddrs)
+			log.Printf("[PeerService Announcer] 周期检查。已知节点（不含自身）: %d。初始节点: %v", knownPeerCount, initialPeerApiAddrs)
 
 			for _, initialPeerAPIAddr := range initialPeerApiAddrs {
 				if initialPeerAPIAddr == s.peerStore.GetSelfApiAddr() { // 不向自己广播

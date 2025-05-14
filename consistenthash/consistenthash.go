@@ -42,7 +42,6 @@ func New(replicas int, fn Hash) *Map {
 	if m.hash == nil {
 		m.hash = crc32.ChecksumIEEE
 	}
-	log.Printf("ConsistentHash: 创建新的哈希环, 虚拟节点倍数: %d", replicas)
 	return m
 }
 
@@ -56,7 +55,7 @@ func (m *Map) Add(keys ...string) {
 	if len(keys) == 0 {
 		return
 	}
-	log.Printf("ConsistentHash: 开始添加节点: %v", keys)
+	//log.Printf("ConsistentHash: 开始添加节点: %v", keys)
 	addedHashes := 0
 	for _, key := range keys {
 		for i := 0; i < m.replicas; i++ {

@@ -102,10 +102,10 @@ func (ps *PeerStore) GetLivePeerGroupcacheAddrsAndPrune() []string {
 	var livePeers []string
 	updatedInternalPeersMap := make(map[string]PeerEntry)
 	removedCount := 0
-
 	for addr, entry := range ps.peers {
 		// Always keep self in the internal map, but don't add to groupcache peers list for groupcache itself.
 		if addr == ps.selfGroupcacheAddr {
+			livePeers = append(livePeers, addr)
 			updatedInternalPeersMap[addr] = entry
 			continue
 		}
@@ -136,7 +136,7 @@ func (ps *PeerStore) UpdateGroupcachePoolIfNeeded() (changed bool) {
 	ps.mu.RUnlock()
 
 	if isDifferent {
-		log.Printf("[%s PeerStore] groupcache 活跃节点列表发生变化，正在更新 groupcache pool。旧: %v, 新: %v", ps.selfGroupcacheAddr, ps.lastSetGroupcachePeers, liveGroupcacheAddrs)
+		log.Printf("[PeerStore] groupcache 活跃节点列表发生变化，正在更新 groupcache pool。旧: %v, 新: %v", ps.lastSetGroupcachePeers, liveGroupcacheAddrs)
 		ps.groupcachePool.Set(liveGroupcacheAddrs...) // This is the crucial call to update groupcache
 
 		ps.mu.Lock()

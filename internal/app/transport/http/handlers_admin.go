@@ -33,7 +33,7 @@ func (h *AdminHandlers) AnnounceSelfHandler(w http.ResponseWriter, r *http.Reque
 		http.Error(w, "announce_self 请求体无效", http.StatusBadRequest)
 		return
 	}
-	log.Printf("[%s 管理] 收到来自 %s (API: %s) 的 /admin/announce_self 请求", h.PeerStore.GetSelfGroupcacheAddr(), payload.GroupcacheAddress, payload.ApiAddress)
+	log.Printf("收到来自 %s (API: %s) 的 /admin/announce_self 请求", payload.GroupcacheAddress, payload.ApiAddress)
 
 	if payload.GroupcacheAddress == "" || payload.ApiAddress == "" {
 		http.Error(w, "announce_self 请求体中缺少 groupcache_address 或 api_address", http.StatusBadRequest)

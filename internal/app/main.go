@@ -109,7 +109,7 @@ func NewApplication() (*Application, error) {
 	// 5. 初始化对等节点管理服务 (PeerService)
 	// PeerService 依赖 PeerStore，并管理宣告、心跳等后台任务。
 	heartbeatInterval := 5 * time.Second // 示例值，可以从配置读取
-	announceInterval := 30 * time.Second // 示例值，可以从配置读取
+	announceInterval := 5 * time.Second  // 示例值，可以从配置读取
 	peerSvc := peermanager.NewPeerService(ps, heartbeatInterval, announceInterval)
 	//log.Println("对等节点管理服务 (PeerService) 已初始化.")
 
