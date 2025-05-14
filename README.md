@@ -1,74 +1,131 @@
-# groupcache
+# Groupcache 分布式缓存系统
 
-## Summary
+这是一个基于 golang/groupcache 的分布式缓存系统，由以下几个主要组件组成：
 
-groupcache is a distributed caching and cache-filling library, intended as a
-replacement for a pool of memcached nodes in many cases.
+1. **Groupcache 缓存服务**: 核心缓存服务，实现了分布式缓存功能
+2. **Sourceapp 数据服务**: 基于SQLite的后端数据存储服务，通过HTTP API提供数据
 
-For API docs and examples, see http://godoc.org/github.com/golang/groupcache
+## 系统架构
 
-## Comparison to memcached
+- `internal/app`: 主应用目录，包含缓存服务实现
+- `internal/sourceapp`: 数据源服务，基于SQLite提供HTTP API数据服务
 
-### **Like memcached**, groupcache:
+系统采用解耦设计，缓存服务通过HTTP API访问数据源服务，而不是直接嵌入数据库。
 
- * shards by key to select which peer is responsible for that key
+## 快速启动
 
-### **Unlike memcached**, groupcache:
+使用提供的启动脚本可以快速启动整个系统：
 
- * does not require running a separate set of servers, thus massively
-   reducing deployment/configuration pain.  groupcache is a client
-   library as well as a server.  It connects to its own peers, forming
-   a distributed cache.
+```bash
+# 给脚本添加执行权限
+chmod +x start-services.sh
 
- * comes with a cache filling mechanism.  Whereas memcached just says
-   "Sorry, cache miss", often resulting in a thundering herd of
-   database (or whatever) loads from an unbounded number of clients
-   (which has resulted in several fun outages), groupcache coordinates
-   cache fills such that only one load in one process of an entire
-   replicated set of processes populates the cache, then multiplexes
-   the loaded value to all callers.
+# 启动服务
+./start-services.sh
+```
 
- * does not support versioned values.  If key "foo" is value "bar",
-   key "foo" must always be "bar".  There are neither cache expiration
-   times, nor explicit cache evictions.  Thus there is also no CAS,
-   nor Increment/Decrement.  This also means that groupcache....
+脚本会自动检测您的内网IP地址，并使用它来配置服务。这样可以确保在局域网内的其他机器能够正确访问您的服务。
 
- * ... supports automatic mirroring of super-hot items to multiple
-   processes.  This prevents memcached hot spotting where a machine's
-   CPU and/or NIC are overloaded by very popular keys/values.
+## 手动启动服务
 
- * is currently only available for Go.  It's very unlikely that I
-   (bradfitz@) will port the code to any other language.
+### 1. 启动数据源服务
 
-## Loading process
+数据源服务基于SQLite，提供数据存储和访问API：
 
-In a nutshell, a groupcache lookup of **Get("foo")** looks like:
+```bash
+# 在一个终端窗口中启动数据源服务
+cd internal/sourceapp/cmd
+go run main.go -db ./data/sqlite.db -http :8086
+```
 
-(On machine #5 of a set of N machines running the same code)
+配置选项:
+- `-db`: SQLite数据库文件路径，默认为 `./data/sqlite.db`
+- `-http`: HTTP服务监听地址，默认为 `:8086`
+- `-name`: 节点名称，用于日志标识
 
- 1. Is the value of "foo" in local memory because it's super hot?  If so, use it.
+### 2. 启动缓存服务
 
- 2. Is the value of "foo" in local memory because peer #5 (the current
-    peer) is the owner of it?  If so, use it.
+缓存服务连接到数据源服务，并提供分布式缓存功能：
 
- 3. Amongst all the peers in my set of N, am I the owner of the key
-    "foo"?  (e.g. does it consistent hash to 5?)  If so, load it.  If
-    other callers come in, via the same process or via RPC requests
-    from peers, they block waiting for the load to finish and get the
-    same answer.  If not, RPC to the peer that's the owner and get
-    the answer.  If the RPC fails, just load it locally (still with
-    local dup suppression).
+```bash
+# 在另一个终端窗口中启动缓存服务
+cd internal/app
+go run main.go
+```
 
-## Users
+## 环境变量配置
 
-groupcache is in production use by dl.google.com (its original user),
-parts of Blogger, parts of Google Code, parts of Google Fiber, parts
-of Google production monitoring systems, etc.
+缓存服务支持通过环境变量进行配置：
 
-## Presentations
+- `API_PORT`: API服务器端口 (默认: "8080")
+- `GROUPCACHE_PORT`: Groupcache服务器端口 (默认: "8081")
+- `SELF_HOST`: 主机IP或名称 (默认: 自动检测内网IP)
+- `SELF_API_ADDR`: 节点API地址 (默认: "http://<内网IP>:8080")
+- `SELF_GROUPCACHE_ADDR`: 节点Groupcache地址 (默认: "http://<内网IP>:8081")
+- `INITIAL_PEERS`: 初始节点列表，逗号分隔 (默认: "")
+- `SOURCEAPP_SERVICE_URL`: 数据源服务URL (默认: "http://<内网IP>:8086")
 
-See http://talks.golang.org/2013/oscon-dl.slide
+示例:
 
-## Help
+```bash
+# 配置并启动缓存服务
+SELF_HOST=192.168.1.100 SOURCEAPP_SERVICE_URL=http://192.168.1.100:8086 API_PORT=8080 GROUPCACHE_PORT=8081 go run internal/app/main.go
+```
 
-Use the golang-nuts mailing list for any discussion or questions.
+## 内网IP自动检测
+
+系统会自动检测您的内网IP地址，以便在局域网内正确配置服务。自动检测逻辑按以下顺序工作：
+
+1. 查找所有网络接口，过滤掉 loopback 和 down 的接口
+2. 跳过无线网卡和虚拟网卡等特殊接口
+3. 查找第一个符合内网IP格式的地址(如 10.x.x.x, 172.16-31.x.x, 192.168.x.x)
+4. 如果找不到合适的IP，则回退使用 "localhost"
+
+您也可以通过 `SELF_HOST` 环境变量手动指定主机地址。
+
+## 创建集群
+
+启动多个缓存服务节点，并配置它们相互了解：
+
+```bash
+# 第一个节点 (192.168.1.100)
+API_PORT=8080 GROUPCACHE_PORT=8081 go run internal/app/main.go
+
+# 第二个节点 (192.168.1.101)
+API_PORT=8082 GROUPCACHE_PORT=8083 INITIAL_PEERS=http://192.168.1.100:8080 go run internal/app/main.go
+
+# 第三个节点 (192.168.1.102)
+API_PORT=8084 GROUPCACHE_PORT=8085 INITIAL_PEERS=http://192.168.1.100:8080,http://192.168.1.101:8082 go run internal/app/main.go
+```
+
+## API使用
+
+### 缓存服务API
+
+- `GET /api/data/{key}`: 获取键值 (先尝试缓存，再尝试数据源)
+- `GET /api/admin/status`: 获取节点状态
+- `GET /api/admin/peers`: 获取集群节点列表
+
+### 数据源服务API
+
+- `GET /api/data/{key}`: 直接从数据库获取键值
+- `PUT /api/data/{key}`: 存储数据
+- `DELETE /api/data/{key}`: 删除数据
+- `GET /api/keys`: 列出所有键
+- `GET /health`: 健康检查
+
+## 示例请求
+
+```bash
+# 通过缓存服务获取数据
+curl http://192.168.1.100:8080/api/data/apple
+
+# 直接通过数据源服务获取数据
+curl http://192.168.1.100:8086/api/data/apple
+
+# 向数据源服务添加数据
+curl -X PUT -d '{"value":"something new"}' http://192.168.1.100:8086/api/data/newkey
+
+# 查看节点状态
+curl http://192.168.1.100:8080/api/admin/status
+```
