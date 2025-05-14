@@ -46,11 +46,11 @@ func NewCachingService(
 		cacheSizeBytes: cacheSizeBytes,
 	}
 
-	log.Printf("[%s CachingService] 正在初始化 groupcache 组 '%s'，缓存大小 %d 字节", cs.nodeAddress, cs.groupName, cs.cacheSizeBytes)
+	//log.Printf("[%s CachingService] 正在初始化 groupcache 组 '%s'，缓存大小 %d 字节", cs.nodeAddress, cs.groupName, cs.cacheSizeBytes)
 	// getterFunc 现在是 CachingService 的一个方法，因此它可以访问 cs.dataStore 和 cs.nodeAddress。
 	cs.Group = groupcache.NewGroup(cs.groupName, cs.cacheSizeBytes, groupcache.GetterFunc(cs.getterFunc))
 
-	log.Printf("[%s CachingService] 正在初始化 HTTPPool，自身地址: %s", cs.nodeAddress, cs.nodeAddress)
+	//log.Printf("[%s CachingService] 正在初始化 HTTPPool，自身地址: %s", cs.nodeAddress, cs.nodeAddress)
 	cs.HttpPool = groupcache.NewHTTPPool(cs.nodeAddress) // NewHTTPPool 在 http.DefaultServeMux 的 /_groupcache/ 路径注册了一个 HTTP 处理程序
 
 	return cs

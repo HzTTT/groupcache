@@ -65,7 +65,7 @@ func NewPeerStore(
 		ApiAddress:        selfApiAddr,
 		LastSeen:          time.Now(), // 标记自身为最近可见
 	}
-	log.Printf("[%s PeerStore] 初始化完成。自身: %s (API: %s)。超时时间: %v", selfGroupcacheAddr, selfGroupcacheAddr, selfApiAddr, peerTimeout)
+	//log.Printf("[%s PeerStore] 初始化完成。自身: %s (API: %s)。超时时间: %v", selfGroupcacheAddr, selfGroupcacheAddr, selfApiAddr, peerTimeout)
 	return ps
 }
 

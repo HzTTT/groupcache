@@ -53,7 +53,7 @@ func (s *PeerService) Start() {
 	go s.announcer()
 	go s.heartbeater()
 	go s.periodicUpdater()
-	log.Printf("[%s PeerService] 已启动，AnnounceInterval: %v, HeartbeatInterval: %v", s.peerStore.GetSelfGroupcacheAddr(), s.announceInterval, s.heartbeatInterval)
+	log.Printf("[%s PeerService] 节点信息交换间隔: %v, 心跳检测间隔: %v", s.peerStore.GetSelfGroupcacheAddr(), s.announceInterval, s.heartbeatInterval)
 }
 
 // Stop 通知后台 goroutine 终止并等待其结束。
@@ -67,7 +67,7 @@ func (s *PeerService) Stop() {
 // announcer 定期向初始节点广播自身信息并处理响应。
 func (s *PeerService) announcer() {
 	defer s.wg.Done()
-	log.Printf("[%s PeerService Announcer] 启动...", s.peerStore.GetSelfGroupcacheAddr())
+	//log.Printf("[%s PeerService Announcer] 启动...", s.peerStore.GetSelfGroupcacheAddr())
 
 	// 初始睡眠，以允许其他节点（特别是初始节点）有可能启动。
 	select {
@@ -155,7 +155,7 @@ func (s *PeerService) announcer() {
 // heartbeater 定期向所有已知节点发送心跳。
 func (s *PeerService) heartbeater() {
 	defer s.wg.Done()
-	log.Printf("[%s PeerService Heartbeater] 启动...", s.peerStore.GetSelfGroupcacheAddr())
+	//log.Printf("[%s PeerService Heartbeater] 启动...", s.peerStore.GetSelfGroupcacheAddr())
 	ticker := time.NewTicker(s.heartbeatInterval)
 	defer ticker.Stop()
 
@@ -196,7 +196,7 @@ func (s *PeerService) heartbeater() {
 // periodicUpdater 定期触发 PeerStore 剔除失效节点并更新 groupcache pool。
 func (s *PeerService) periodicUpdater() {
 	defer s.wg.Done()
-	log.Printf("[%s PeerService PeriodicUpdater] 启动...", s.peerStore.GetSelfGroupcacheAddr())
+	//log.Printf("[%s PeerService PeriodicUpdater] 启动...", s.peerStore.GetSelfGroupcacheAddr())
 	// PeerStore 的超时是剪枝的真实来源。这个定时器确保它被定期检查。
 	// 使用节点超时的一部分，或固定的合理间隔。
 	checkInterval := s.peerStore.peerTimeoutDuration / 2

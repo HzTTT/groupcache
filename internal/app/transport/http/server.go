@@ -60,7 +60,7 @@ func (s *Server) registerRoutes() {
 	// 用于对等节点管理的管理路由
 	s.apiMux.HandleFunc("/admin/announce_self", s.AdminHandlers.AnnounceSelfHandler)
 	s.apiMux.HandleFunc("/admin/heartbeat", s.AdminHandlers.HeartbeatHandler)
-	log.Printf("[%s HTTP 服务器] API 和管理路由已注册。", s.appConfig.SelfApiAddr)
+	//log.Printf("[%s HTTP 服务器] API 和管理路由已注册。", s.appConfig.SelfApiAddr)
 }
 
 // StartHttpServers 启动 API/Admin 服务器和 groupcache 对等通信服务器。
@@ -76,12 +76,12 @@ func (s *Server) StartHttpServers() {
 		Handler: http.DefaultServeMux, // groupcache HTTPPool 应该已经在此注册
 	}
 	go func() {
-		log.Printf("Groupcache 对等服务器正在启动，监听端口: %s (用于 /_groupcache/ 路径)", s.appConfig.GroupcachePort)
+		//log.Printf("Groupcache 对等服务器正在启动，监听端口: %s (用于 /_groupcache/ 路径)", s.appConfig.GroupcachePort)
 		if err := peerHttpServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			log.Printf("启动 groupcache 对等服务器时出错: %v", err)
 			errChan <- fmt.Errorf("groupcache 对等服务器失败: %w", err)
 		}
-		log.Printf("Groupcache 对等服务器 (端口 %s) 已关闭。", s.appConfig.GroupcachePort)
+		//log.Printf("Groupcache 对等服务器 (端口 %s) 已关闭。", s.appConfig.GroupcachePort)
 	}()
 
 	// 启动 API 服务器 (监听 appConfig.ApiPort)
@@ -90,7 +90,7 @@ func (s *Server) StartHttpServers() {
 		Handler: s.apiMux, // 使用已注册 API 和管理处理程序的 mux
 	}
 	go func() {
-		log.Printf("API 服务器 (客户端请求和管理) 正在启动，监听端口: %s", s.appConfig.ApiPort)
+		//log.Printf("API 服务器 (客户端请求和管理) 正在启动，监听端口: %s", s.appConfig.ApiPort)
 		if err := apiHttpServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			log.Printf("启动 API 服务器时出错: %v", err)
 			errChan <- fmt.Errorf("API 服务器失败: %w", err)

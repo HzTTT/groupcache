@@ -71,7 +71,7 @@ func getLocalIP() string {
 
 			// 检查是否是内网地址
 			if !ip.IsLoopback() && (ip.IsPrivate() || isLocalSubnet(ip)) {
-				log.Printf("找到内网IP: %s (接口: %s)", ip.String(), iface.Name)
+				//log.Printf("找到内网IP: %s (接口: %s)", ip.String(), iface.Name)
 				return ip.String()
 			}
 		}
@@ -106,7 +106,7 @@ func LoadConfig() *AppConfig {
 
 	// 从环境变量获取主机名或内网IP
 	selfHost := getEnvOrDefault("SELF_HOST", getLocalIP())
-	log.Printf("使用主机地址: %s", selfHost)
+	//log.Printf("使用主机地址: %s", selfHost)
 
 	selfApiAddr := getEnvOrDefault("SELF_API_ADDR", "http://"+selfHost+":"+apiPort)
 	selfGCAddr := getEnvOrDefault("SELF_GROUPCACHE_ADDR", "http://"+selfHost+":"+gcPort)
