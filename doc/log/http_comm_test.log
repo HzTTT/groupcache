@@ -1,0 +1,15 @@
+[2025-04-19 18:05:30] INFO: 开始HTTP通信测试 (节点1 -> 节点2)
+[2025-04-19 18:05:30] DEBUG: [节点1] 请求键 "product:xyz"，责任节点: 节点2
+[2025-04-19 18:05:30] DEBUG: [节点1] httpGetter 发送 GET 请求到 http://localhost:8002/_groupcache/products/product:xyz
+[2025-04-19 18:05:30] DEBUG: [节点2] ServeHTTP 接收到请求 /_groupcache/products/product:xyz
+[2025-04-19 18:05:30] DEBUG: [节点2] 调用 Group products 的 Get 方法
+[2025-04-19 18:05:30] DEBUG: [节点2] 本地缓存命中，返回数据
+[2025-04-19 18:05:30] DEBUG: [节点2] ServeHTTP 序列化并发送响应 (protobuf)
+[2025-04-19 18:05:30] DEBUG: [节点1] httpGetter 接收到 200 OK 响应
+[2025-04-19 18:05:30] DEBUG: [节点1] httpGetter 解析 protobuf 响应成功
+[2025-04-19 18:05:30] INFO: HTTP通信测试成功，往返延迟: 4ms ✓ 
+
+
+
+
+

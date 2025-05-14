@@ -1,0 +1,15 @@
+[2025-04-19 17:15:10] DEBUG: [Group users] 请求键 "item:abc"
+[2025-04-19 17:15:10] DEBUG: [Group users] lookupCache("item:abc") - 未命中
+[2025-04-19 17:15:10] DEBUG: [Group users] load("item:abc") - 开始加载
+[2025-04-19 17:15:10] DEBUG: [Group users] loadGroup.Do("item:abc") - 执行加载函数
+[2025-04-19 17:15:10] DEBUG: [Group users] lookupCache("item:abc") - 再次检查，未命中
+[2025-04-19 17:15:10] DEBUG: [Group users] PickPeer("item:abc") - 责任节点为本地
+[2025-04-19 17:15:10] DEBUG: [Group users] getLocally("item:abc") - 调用Getter获取源数据
+[2025-04-19 17:15:10] DEBUG: [Group users] 数据源返回数据，大小: 1.5KB
+[2025-04-19 17:15:10] DEBUG: [Group users] populateCache("item:abc", data) - 填充主缓存
+[2025-04-19 17:15:10] DEBUG: [Group users] loadGroup.Do("item:abc") - 加载完成
+[2025-04-19 17:15:10] DEBUG: [Group users] 请求处理完成，返回数据 
+
+
+
+
