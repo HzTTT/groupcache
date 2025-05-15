@@ -76,21 +76,10 @@ func (h *ApiHandlers) GetHandler(w http.ResponseWriter, r *http.Request) {
 // PingApiHandler 是 API 服务的简单 ping 端点。
 // 它还显示节点的地址和已知的活动 groupcache 对等节点。
 func (h *ApiHandlers) PingApiHandler(w http.ResponseWriter, r *http.Request) {
-	apiAddr := "[配置不可用]"
-	gcAddr := "[配置不可用]"
-	var livePeers []string
-
-	if h.AppConfig != nil {
-		apiAddr = h.AppConfig.SelfApiAddr
-		gcAddr = h.AppConfig.SelfGroupcacheAddr
-	}
-	if h.PeerStore != nil {
-		// GetLivePeerGroupcacheAddrsAndPrune 也会进行修剪，这对于信息端点来说是可以的。
-		livePeers = h.PeerStore.GetLivePeerGroupcacheAddrsAndPrune()
-	}
-
-	fmt.Fprintf(w, "来自 API 服务器 %s (groupcache 服务位于: %s) 的 pong \n已知的活动 groupcache 对等节点: %v\n",
-		apiAddr, gcAddr, livePeers)
+	stats := h.Group.Stats
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(stats)
+	w.WriteHeader(http.StatusOK)
 }
 
 // KnownPeersHandler 提供一个端点来查看 PeerStore 已知的所有对等节点 (用于调试/信息)。

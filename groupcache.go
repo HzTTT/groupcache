@@ -181,15 +181,15 @@ type flightGroup interface {
 
 // Stats 是每个组的统计信息。
 type Stats struct {
-	Gets           AtomicInt // 任何 Get 请求，包括来自对等体的
-	CacheHits      AtomicInt // 任一缓存命中
-	PeerLoads      AtomicInt // 远程加载或远程缓存命中（非错误）
-	PeerErrors     AtomicInt
-	Loads          AtomicInt // (gets - cacheHits)
-	LoadsDeduped   AtomicInt // 在 singleflight 后
-	LocalLoads     AtomicInt // 总成功本地加载
-	LocalLoadErrs  AtomicInt // 总失败本地加载
-	ServerRequests AtomicInt // 通过网络从对等体来的 gets
+	Gets           AtomicInt `json:"gets"`       // 任何 Get 请求，包括来自对等体的
+	CacheHits      AtomicInt `json:"cache_hits"` // 任一缓存命中
+	PeerLoads      AtomicInt `json:"peer_loads"` // 远程加载或远程缓存命中（非错误）
+	PeerErrors     AtomicInt `json:"peer_errors"`
+	Loads          AtomicInt `json:"loads"`           // (gets - cacheHits)
+	LoadsDeduped   AtomicInt `json:"loads_deduped"`   // 在 singleflight 后
+	LocalLoads     AtomicInt `json:"local_loads"`     // 总成功本地加载
+	LocalLoadErrs  AtomicInt `json:"local_load_errs"` // 总失败本地加载
+	ServerRequests AtomicInt `json:"server_requests"` // 通过网络从对等体来的 gets
 }
 
 // Name 返回组的名称。

@@ -62,17 +62,17 @@ func (c *Cache) Add(key Key, value interface{}) {
 	if c.cache == nil {
 		c.cache = make(map[interface{}]*list.Element)
 		c.ll = list.New()
-		log.Printf("LRU: Add - 缓存未初始化, 重新初始化")
+		//log.Printf("LRU: Add - 缓存未初始化, 重新初始化")
 	}
 	if ee, ok := c.cache[key]; ok {
 		c.ll.MoveToFront(ee)
 		ee.Value.(*entry).value = value
-		log.Printf("LRU: Add - 更新键 '%v'", key)
+		//log.Printf("LRU: Add - 更新键 '%v'", key)
 		return
 	}
 	ele := c.ll.PushFront(&entry{key, value})
 	c.cache[key] = ele
-	log.Printf("LRU: Add - 添加新键 '%v'", key)
+	//log.Printf("LRU: Add - 添加新键 '%v'", key)
 	if c.MaxEntries != 0 && c.ll.Len() > c.MaxEntries {
 		log.Printf("LRU: Add - 缓存已满 (Len: %d, Max: %d), 淘汰最旧元素", c.ll.Len(), c.MaxEntries)
 		c.RemoveOldest()

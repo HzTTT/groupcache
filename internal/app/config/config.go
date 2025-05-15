@@ -117,7 +117,7 @@ func LoadConfig() *AppConfig {
 		peers = strings.Split(peersStr, ",")
 	}
 
-	sourceappURL := getEnvOrDefault("SOURCEAPP_SERVICE_URL", "http://"+selfHost+":8086")
+	sourceappURL := getEnvOrDefault("SOURCEAPP_SERVICE_URL", "http://192.168.0.21:8086")
 
 	return &AppConfig{
 		ApiPort:             apiPort,

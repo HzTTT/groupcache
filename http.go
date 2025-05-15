@@ -152,7 +152,7 @@ func (p *HTTPPool) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	groupName := parts[0]
 	key := parts[1]
 
-	log.Printf("[节点 %s] ServeHTTP 接收到请求 %s", p.self, r.URL.Path)
+	//log.Printf("[节点 %s] ServeHTTP 接收到请求 %s", p.self, r.URL.Path)
 
 	// 获取此组/键的值。
 	group := GetGroup(groupName)
@@ -169,7 +169,7 @@ func (p *HTTPPool) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	group.Stats.ServerRequests.Add(1)
 	var value []byte
-	log.Printf("[节点 %s] ServeHTTP 调用 Group %s 的 Get 方法，键: %s", p.self, groupName, key)
+	//log.Printf("[节点 %s] ServeHTTP 调用 Group %s 的 Get 方法，键: %s", p.self, groupName, key)
 	err := group.Get(ctx, key, AllocatingByteSliceSink(&value))
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -184,7 +184,7 @@ func (p *HTTPPool) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Header().Set("Content-Type", "application/x-protobuf")
 	w.Write(body)
-	log.Printf("[节点 %s] ServeHTTP 序列化并发送响应 (protobuf) 给 %s", p.self, r.RemoteAddr)
+	//log.Printf("[节点 %s] ServeHTTP 序列化并发送响应 (protobuf) 给 %s", p.self, r.RemoteAddr)
 }
 
 type httpGetter struct {
