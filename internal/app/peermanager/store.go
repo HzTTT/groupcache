@@ -83,11 +83,11 @@ func (ps *PeerStore) AddOrUpdatePeer(groupcacheAddr, apiAddr string, lastSeenTim
 	}
 
 	if !exists {
-		log.Printf("[%s PeerStore] 发现新节点: %s (API: %s)", ps.selfGroupcacheAddr, groupcacheAddr, apiAddr)
+		log.Printf("PeerStore] 发现新节点: %s (API: %s)", groupcacheAddr, apiAddr)
 		return true
 	}
 	if existingEntry.ApiAddress != apiAddr {
-		log.Printf("[%s PeerStore] 节点 %s 的 API 地址发生变化: 旧 %s, 新 %s", ps.selfGroupcacheAddr, groupcacheAddr, existingEntry.ApiAddress, apiAddr)
+		log.Printf("PeerStore] 节点 %s 的 API 地址发生变化: 旧 %s, 新 %s", groupcacheAddr, existingEntry.ApiAddress, apiAddr)
 		return true // Consider API address change as a notable update
 	}
 	// log.Printf("[%s PeerStore] Updated lastSeen for peer: %s", ps.selfGroupcacheAddr, groupcacheAddr) // Too verbose for heartbeats

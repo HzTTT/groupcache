@@ -53,7 +53,7 @@ func (s *PeerService) Start() {
 	go s.announcer()
 	go s.heartbeater()
 	go s.periodicUpdater()
-	log.Printf("[%s PeerService] 节点信息交换间隔: %v, 心跳检测间隔: %v", s.peerStore.GetSelfGroupcacheAddr(), s.announceInterval, s.heartbeatInterval)
+	log.Printf("[PeerService] 节点信息交换间隔: %v, 心跳检测间隔: %v", s.announceInterval, s.heartbeatInterval)
 }
 
 // Stop 通知后台 goroutine 终止并等待其结束。
@@ -86,15 +86,8 @@ func (s *PeerService) announcer() {
 				continue
 			}
 
-			// 决定是否需要向初始节点重新广播的逻辑
-			// 例如，如果节点数量非常少或从未成功向某些初始节点广播过。
 			knownPeerCount := 0
-			// 这里直接访问 s.peerStore.peers 获取计数；如果并发调用，确保 PeerStore 的锁处理这个安全。
-			// 目前，这与通过 AddOrUpdatePeer 修改 peerStore 的其他 goroutine 上下文相同
-			// 但对于读取，如果 PeerStore 为 peers 映射提供，则 RLock 更好。
-			// 更正：应使用 PeerStore 方法，如 GetAllKnownPeers 或特定计数方法。
-			// 为简单起见，这里使用直接（但锁定）访问模式作为示例，假设 AddOrUpdatePeer 是主要写入器。
-			// 如果 PeerStore 本身公开计数方法或安全迭代节点的方式，则将进行完善。
+
 			func() { // 匿名函数范围 RLock
 				s.peerStore.mu.RLock()
 				defer s.peerStore.mu.RUnlock()
@@ -115,17 +108,17 @@ func (s *PeerService) announcer() {
 				// 如果我们尚未成功向此初始节点广播，或者节点计数为零，则重新广播。
 				if !announcedToInitialOnce[initialPeerAPIAddr] || knownPeerCount == 0 {
 					targetURL := initialPeerAPIAddr + "/admin/announce_self" // 假设 Announce 在 admin 路径上
-					log.Printf("[%s PeerService Announcer] 正在向 %s 广播", s.peerStore.GetSelfGroupcacheAddr(), targetURL)
+					log.Printf("[PeerService Announcer] 正在向 %s 广播", targetURL)
 					var resp AnnounceResponse
 					err := sendPostRequest(targetURL, s.nodeSelfAnnouncePayload, &resp, 0) // 使用 client.go 的 sendPostRequest
 
 					if err != nil {
-						log.Printf("[%s PeerService Announcer] 广播到 %s 出错: %v", s.peerStore.GetSelfGroupcacheAddr(), targetURL, err)
+						log.Printf("[PeerService Announcer] 广播到 %s 出错: %v", targetURL, err)
 						// 如果错误，不标记为已广播，下一个周期将重试
 						continue
 					}
 					announcedToInitialOnce[initialPeerAPIAddr] = true
-					log.Printf("[%s PeerService Announcer] 成功广播到 %s。响应中包含 %d 个已知节点。", s.peerStore.GetSelfGroupcacheAddr(), targetURL, len(resp.KnownPeers))
+					log.Printf("[PeerService Announcer] 成功广播到 %s。响应中包含 %d 个已知节点。", targetURL, len(resp.KnownPeers))
 
 					var changedByAnnounce bool
 					for _, discoveredPeer := range resp.KnownPeers {

@@ -51,8 +51,12 @@ func (h *AdminHandlers) AnnounceSelfHandler(w http.ResponseWriter, r *http.Reque
 	for _, entry := range knownPeersMap {
 		// 可选：不要在列表中将宣告者自身或接收者自身发送回去。
 		// 这个简单的实现发送所有已知的对等节点。
-		// if gcAddr == payload.GroupcacheAddress { continue } // 不要将宣告者发送回其自身
-		// if gcAddr == h.PeerStore.GetSelfGroupcacheAddr() { continue } // 不要将自身发送给宣告者
+		if entry.GroupcacheAddress == payload.GroupcacheAddress {
+			continue
+		} // 不要将宣告者发送回其自身
+		if entry.GroupcacheAddress == h.PeerStore.GetSelfGroupcacheAddr() {
+			continue
+		} // 不要将自身发送给宣告者
 
 		currentKnownPeers = append(currentKnownPeers, peermanager.AnnouncePayload{
 			GroupcacheAddress: entry.GroupcacheAddress,
