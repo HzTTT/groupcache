@@ -11,7 +11,7 @@ import (
 
 // 节点管理相关常量 - 之后可以做成可配置
 const (
-	DefaultPeerTimeoutDuration = 15 * time.Second
+	DefaultPeerTimeoutDuration = 10 * time.Second
 	// heartbeatInterval 和 announceInterval 由 service 层管理
 )
 
@@ -114,13 +114,13 @@ func (ps *PeerStore) GetLivePeerGroupcacheAddrsAndPrune() []string {
 			livePeers = append(livePeers, addr)
 			updatedInternalPeersMap[addr] = entry
 		} else {
-			log.Printf("[%s PeerStore] 剔除失效节点: %s (API: %s, 最后活跃: %v)", ps.selfGroupcacheAddr, addr, entry.ApiAddress, entry.LastSeen)
+			log.Printf("[PeerStore] 剔除失效节点: %s (API: %s, 最后活跃: %v)", addr, entry.ApiAddress, entry.LastSeen)
 			removedCount++
 		}
 	}
 	ps.peers = updatedInternalPeersMap
 	if removedCount > 0 {
-		log.Printf("[%s PeerStore] 已剔除 %d 个失效节点。当前已知节点（含自身）: %d", ps.selfGroupcacheAddr, removedCount, len(ps.peers))
+		//log.Printf("[PeerStore] 已剔除 %d 个失效节点。当前已知节点（含自身）: %d", removedCount, len(ps.peers))
 	}
 
 	sort.Strings(livePeers) // Sort for consistent comparison and Set calls
@@ -136,7 +136,7 @@ func (ps *PeerStore) UpdateGroupcachePoolIfNeeded() (changed bool) {
 	ps.mu.RUnlock()
 
 	if isDifferent {
-		log.Printf("[PeerStore] groupcache 活跃节点列表发生变化，正在更新 groupcache pool。旧: %v, 新: %v", ps.lastSetGroupcachePeers, liveGroupcacheAddrs)
+		//log.Printf("[PeerStore] groupcache 活跃节点列表发生变化，正在更新 groupcache pool。旧: %v, 新: %v", ps.lastSetGroupcachePeers, liveGroupcacheAddrs)
 		ps.groupcachePool.Set(liveGroupcacheAddrs...) // This is the crucial call to update groupcache
 
 		ps.mu.Lock()

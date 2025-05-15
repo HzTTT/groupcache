@@ -68,7 +68,7 @@ func (m *Map) Add(keys ...string) {
 		}
 	}
 	sort.Ints(m.keys)
-	log.Printf("ConsistentHash: 添加完成, 共生成 %d 个虚拟节点并排序", addedHashes)
+	//log.Printf("ConsistentHash: 添加完成, 共生成 %d 个虚拟节点并排序", addedHashes)
 }
 
 // Get 获取哈希中与提供的键最接近的项。

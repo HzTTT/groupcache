@@ -107,7 +107,6 @@ func (s *PeerService) announcer() {
 				// 如果我们尚未成功向此初始节点广播，或者节点计数为零，则重新广播。
 				if !announcedToInitialOnce[initialPeerAPIAddr] || knownPeerCount == 0 {
 					targetURL := initialPeerAPIAddr + "/admin/announce_self" // 假设 Announce 在 admin 路径上
-					log.Printf("[PeerService Announcer] 正在向 %s 广播", targetURL)
 					var resp AnnounceResponse
 					err := sendPostRequest(targetURL, s.nodeSelfAnnouncePayload, &resp, 0) // 使用 client.go 的 sendPostRequest
 
