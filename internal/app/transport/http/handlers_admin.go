@@ -98,9 +98,10 @@ func (h *AdminHandlers) HeartbeatHandler(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	h.PeerStore.AddOrUpdatePeer(payload.GroupcacheAddress, payload.ApiAddress, time.Now())
-	// UpdateGroupcachePoolIfNeeded 由 AddOrUpdatePeer 或定期修剪器调用，
-	// 但在此处调用可确保在对等节点恢复在线时立即反映。
-	h.PeerStore.UpdateGroupcachePoolIfNeeded()
+	if h.PeerStore.AddOrUpdatePeer(payload.GroupcacheAddress, payload.ApiAddress, time.Now()) {
+		// UpdateGroupcachePoolIfNeeded 由 AddOrUpdatePeer 或定期修剪器调用，
+		// 但在此处调用可确保在对等节点恢复在线时立即反映。
+		h.PeerStore.UpdateGroupcachePoolIfNeeded()
+	}
 	w.WriteHeader(http.StatusOK)
 }

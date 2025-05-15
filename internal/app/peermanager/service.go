@@ -72,6 +72,7 @@ func (s *PeerService) announcer() {
 	ticker := time.NewTicker(s.announceInterval)
 	defer ticker.Stop()
 
+	log.Printf("[PeerService Announcer] 初始节点: %v", s.peerStore.GetInitialPeerApiAddrs())
 	announcedToInitialOnce := make(map[string]bool) // 跟踪我们是否至少成功向初始对等点广播一次
 
 	for {
@@ -97,8 +98,6 @@ func (s *PeerService) announcer() {
 					}
 				}
 			}()
-
-			log.Printf("[PeerService Announcer] 周期检查。已知节点（不含自身）: %d。初始节点: %v", knownPeerCount, initialPeerApiAddrs)
 
 			for _, initialPeerAPIAddr := range initialPeerApiAddrs {
 				if initialPeerAPIAddr == s.peerStore.GetSelfApiAddr() { // 不向自己广播
