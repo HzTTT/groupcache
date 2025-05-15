@@ -55,16 +55,16 @@ func (g *Group) Do(key string, fn func() (interface{}, error)) (interface{}, err
 	c := new(call)
 	c.wg.Add(1)
 	g.m[key] = c
-	log.Printf("Singleflight: 新请求键 \"%s\", 执行函数", key)
+	//log.Printf("Singleflight: 新请求键 \"%s\", 执行函数", key)
 	g.mu.Unlock()
 
 	c.val, c.err = fn()
 	c.wg.Done()
-	log.Printf("Singleflight: 键 \"%s\" 的函数执行完成", key)
+	//log.Printf("Singleflight: 键 \"%s\" 的函数执行完成", key)
 
 	g.mu.Lock()
 	delete(g.m, key)
-	log.Printf("Singleflight: 删除键 \"%s\" 从进行中请求 map", key)
+	//log.Printf("Singleflight: 删除键 \"%s\" 从进行中请求 map", key)
 	g.mu.Unlock()
 
 	return c.val, c.err

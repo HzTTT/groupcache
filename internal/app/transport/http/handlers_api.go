@@ -48,7 +48,7 @@ func (h *ApiHandlers) GetHandler(w http.ResponseWriter, r *http.Request) {
 		// 对于自身节点的地址，优先使用 AppConfig 更清晰。
 		nodeAddr = h.PeerStore.GetSelfGroupcacheAddr()
 	}
-	log.Printf("[%s API /get] 收到键请求: %q", nodeAddr, key)
+	//log.Printf("[%s API /get] 收到键请求: %q", nodeAddr, key)
 
 	var data []byte
 	// 为 Get 操作创建一个带超时的上下文。

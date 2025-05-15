@@ -3,7 +3,6 @@ package gcache
 import (
 	"context"
 	"fmt"
-	"log"
 
 	"github.com/golang/groupcache"
 	"github.com/golang/groupcache/internal/app/datastore"
@@ -59,11 +58,11 @@ func NewCachingService(
 // getterFunc 定义了如何在缓存或对等节点中不存在数据时加载数据。
 // 它是 CachingService 的一个方法，以访问其依赖项，如 dataStore。
 func (cs *CachingService) getterFunc(ctx context.Context, key string, dest groupcache.Sink) error {
-	log.Printf("[获取器] 节点 %s，组 %s：被调用获取键: %q。", cs.nodeAddress, cs.groupName, key)
+	//log.Printf("[获取器] 节点 %s，组 %s：被调用获取键: %q。", cs.nodeAddress, cs.groupName, key)
 
 	val, err := cs.dataStore.Get(key) // 使用注入的数据存储
 	if err != nil {
-		log.Printf("[获取器] 节点 %s，组 %s：数据存储中未找到键 %q: %v", cs.nodeAddress, cs.groupName, key, err)
+		//log.Printf("[获取器] 节点 %s，组 %s：数据存储中未找到键 %q: %v", cs.nodeAddress, cs.groupName, key, err)
 		// 这里返回的错误必须是 groupcache 能够理解的错误，
 		// 或者至少是一个表示未找到键的错误，这样它就不会被缓存为该键的永久错误。
 		// groupcache 本身没有针对此的特定错误类型，fmt.Errorf 已足够。
@@ -72,9 +71,9 @@ func (cs *CachingService) getterFunc(ctx context.Context, key string, dest group
 
 	// datastore.Get 方法已经返回了一个副本，所以这里不需要再复制一次。
 	if err := dest.SetBytes(val); err != nil {
-		log.Printf("[获取器] 节点 %s，组 %s：为键 %q 设置字节时出错: %v", cs.nodeAddress, cs.groupName, key, err)
+		//log.Printf("[获取器] 节点 %s，组 %s：为键 %q 设置字节时出错: %v", cs.nodeAddress, cs.groupName, key, err)
 		return err
 	}
-	log.Printf("[获取器] 节点 %s，组 %s：成功为键 %q 在缓存接收器中设置字节", cs.nodeAddress, cs.groupName, key)
+	//log.Printf("[获取器] 节点 %s，组 %s：成功为键 %q 在缓存接收器中设置字节", cs.nodeAddress, cs.groupName, key)
 	return nil
 }
